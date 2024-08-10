@@ -2,7 +2,9 @@
 /dist
 /node_modules
 /build
-
+postgres_data*
+images*
+.env*
 # Logs
 logs
 *.log

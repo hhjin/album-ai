@@ -12,8 +12,9 @@ CREATE TABLE file_album
     desc_ai      text,
     desc_custom  text,
     extra        text,
-    created_at   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    exif         jsonb,
+    photo_time   TIMESTAMP WITH TIME ZONE
+
 );
 
 create unique index uk_crc on file_album (crc);
@@ -25,6 +26,6 @@ create table file_vector_index
     id        bigserial primary key,
     text      varchar not null,
     metadata  jsonb,
-    embedding vector(3072)
+    embedding vector(1536)
 );
 

@@ -7,16 +7,17 @@ services:
       POSTGRES_DB: album
     ports:
       - "5432:5432"
+    restart: always
     volumes:
       - ./sql/project.sql:/docker-entrypoint-initdb.d/init.sql
-      - /tmp/postgres/data:/var/lib/postgresql/data
+      - ${POSTGRES_DB_PATH:-./postgres_data}:/var/lib/postgresql/data
   album-ai:
     depends_on:
       - postgres
     build:
       context: .
       dockerfile: Dockerfile
-    restart: on-failure
+    restart: always
     tty: true
     ports:
       - "8080:8080"

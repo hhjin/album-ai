@@ -2,8 +2,6 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('file_album')
@@ -38,9 +36,11 @@ export class FileAlbum {
   @Column({ name: 'extra', type: 'text' })
   extra: string;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
-  createdAt: Date;
+  @Column({ name: 'photo_time', type: 'text' })
+  photo_time: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
-  updatedAt: Date;
+  @Column({ name: 'exif', type: 'jsonb' })
+  exif: object;
+
+ 
 }

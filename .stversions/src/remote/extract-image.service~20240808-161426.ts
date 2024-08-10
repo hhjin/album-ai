@@ -60,6 +60,7 @@ export class ExtractImageService {
       });
       return res.choices[0].message.content;
     }  else if (process.env.IMAGE_EXTRACT_PROVIDER == 'azure') {
+      console.log('openai_azure_image_extract', openai_azure_image_extract);
       const res = await openai_azure_image_extract.chat.completions.create({
         model: process.env.IMAGE_EXTRACT_PROVIDER_MODEL,
         max_tokens: 300,

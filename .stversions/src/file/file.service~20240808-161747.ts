@@ -26,8 +26,6 @@ export class FileService {
   private InitialScanFileExecuted = false;
   private InitialExtractDescExecuted = false;
   private InitialEmbeddingExecuted = false;
-  private hasUpdateStatusFromIgnore2InitTask = false;
-
 
   public async heartBeating (initFileScan:boolean=true) {
     if (this.hasHeartBeatingTask  )
@@ -35,9 +33,6 @@ export class FileService {
     this.hasHeartBeatingTask=true
 
     try {
-
-      //this.updateStatusFromIgnore2Init();  
-
       if ( ! this.hasScanFileTask && ! this.InitialScanFileExecuted && initFileScan){
         this.logger.log('InitialScanFileExecuting')
         await this.scanFile()
@@ -195,7 +190,8 @@ export class FileService {
       let newFilesCount = 0;
       const fileDetails = [];
 
-      for (const filePath of newFilePaths.reverse()) { //倒序以和文件名排序一致
+      //for (const filePath of newFilePaths.reverse()) { //倒序以和文件名排序一致
+      for (const filePath of newFilePaths) {
         if (newFilesCount >= MAX_FILES) break;
         let stats, fileBuffer, crc, contentType;
         try {
@@ -237,17 +233,14 @@ export class FileService {
         }
       }
 
-      //用于类似图像源素材文件数巨量，大量连拍的情况。 最初每 igonoredInterval=5 个设置为Init，其它为Ignore. 第二次，通过 updateStatusFromIgnore2Init，再选择间隔设置为Init.
-      const igonoredInterval = 1; 
-
-      this.logger.warn(`\n#### Insert **NEW** files to DB, count : ${fileDetails.length} `);
       // 批量插入新文件到数据库
+      this.logger.warn(`\n#### Insert **NEW** files to DB, count : ${fileDetails.length} `);
       const dataList = fileDetails.map((item, index) => {
         return {
           fileName: item.name,
           path: item.path,
           crc: item.crc,
-          status: index % igonoredInterval === 0 ? FileStatus.Init : FileStatus.Ignore,
+          status: index % 5 === 0 ? FileStatus.Init : FileStatus.Ignore,
           crcFile: item.fileType,
           contentType: item.fileType,
           size: item.size,
@@ -274,53 +267,6 @@ export class FileService {
     } finally {
       this.hasScanFileTask = false;
     }
-  }
-
-
-  //用于类似图像源素材文件数巨量，大量连拍的情况。 最初每 igonoredInterval=5 个设置为Init，其它为Ignore. 第二次，通过 updateStatusFromIgnore2Init，再选择间隔设置为Init. 
-  private async updateStatusFromIgnore2Init() {
-    if (this.hasUpdateStatusFromIgnore2InitTask) {
-      return;
-    }
-    this.hasUpdateStatusFromIgnore2InitTask = true;
-
-    let updateStatusFromIgnore2Init_count = 0;
-    let total_count = 0;
-    while (updateStatusFromIgnore2Init_count <= 0) {
-    const dataList = await this.fileRepository.find({
-      where: {
-        fId: MoreThan(0n),
-        status: FileStatus.Embedding,
-      },
-          take: 20000,
-      order: { fId: 'asc' },
-    });
-    
-
-    if (!dataList || dataList.length == 0) {
-      return;
-    }
-
-      for (const fileAlbum of dataList) { // 20000
-      const fId= fileAlbum.fId;
-      const fId_tobe_updated = BigInt(fId) + 2n; 
-      const fileAlbumTobeUpdated = await this.fileRepository.findOne({ where: { fId: fId_tobe_updated ,status: FileStatus.Ignore, } });
-      if (fileAlbumTobeUpdated) {
-          total_count++;
-          this.logger.warn(`updateStatusFromIgnore2Init fId: ${fId_tobe_updated}   total_count: ${total_count} path: ${fileAlbumTobeUpdated.path} `);
-          await this.fileRepository.update(
-            {
-              fId: fId_tobe_updated 
-            },
-            {
-              status: FileStatus.Init,
-            }
-          );
-        }
-      }//for
-      updateStatusFromIgnore2Init_count++;
-      this.logger.warn(`updateStatusFromIgnore2Init_count of batch 2000 : ${updateStatusFromIgnore2Init_count}  total_count: ${total_count} `);
-    }//while
   }
 
   public async extractDesc() {
@@ -537,48 +483,6 @@ export class FileService {
       throw err
     }
   }
-
-  public async searchImages(query: string) {
-    const scoreThreshold = 0.23; // 设置相似度阈值
-    const results = await this.pgVectorStoreService.search(query, 30); // 限制结果为30张图片
-    if (!results || results.length === 0) {
-      return [];
-    }
-
-    const filteredResults = results.filter((item) => {
-      const fId = item[0].metadata.fId;
-      const score = item[1];
-      return score <= scoreThreshold; // 过滤掉大于 scoreThreshold 的结果
-    });
-    //console.log(`fId: ${fId}, path: ${trimmedPath}, score: ${score}`); // 打印 fId, path 和 score
-    const fIds = filteredResults.map((item) => item[0].metadata.fId);
-    const fileAlbums = await this.fileRepository.find({
-      where: {
-        fId: In(fIds),
-      },
-    });
-    this.logger.log(`\n\n## searchImages result size: ${filteredResults.length}`);
-    const imagesData = filteredResults.map((item) => {
-      const file = fileAlbums.find(f => f.fId.toString() === item[0].metadata.fId);
-      const path = file.path.replace(/\\/g, '/');
-      const trimmedPath = path.replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
-      return {
-        fId: file.fId,
-        fileName: file.fileName,
-        path:trimmedPath,
-        url: `${configService.getHostName()}/api/v1/file/${file.fId}/download`,
-        score: item[1],
-        displayText: `${trimmedPath} ${item[1].toFixed(3)}`, // 预处理显示文本
-      };
-    });
-
-    imagesData.forEach((item) => {
-      console.log(`### score: ${item.score.toFixed(3)},   ### path: ${item.path},    ### url: ${item.url}, `);
-    });
-    
-    return imagesData;
-  }
-
 
   public async findFile(fId: string) {
     return await this.fileRepository.findOne({
