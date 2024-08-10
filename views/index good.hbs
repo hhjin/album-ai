@@ -1,0 +1,317 @@
+<html class='dark'>
+  <head>
+    <meta charset='utf-8' />
+    <title>家庭AI相册 - AI-First Album/Gallery</title>
+    <meta
+      name='description'
+      content='AI-First Album: Auto generate image metadata and chat with album. RAG + Album.'
+    />
+    <meta name="keywords" content="Album, AI, Image, Video, OpenAI, Chat, RAG, Search, LLM">
+    <script
+      src='https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries'
+    ></script>
+    <script src='https://cdn.jsdelivr.net/npm/marked/marked.min.js'></script>
+    <script>
+      tailwind.config = { darkMode: 'class', theme: { extend: { colors: {
+      primary: '#3b82f6', } } } }
+    </script>
+    <style type='text/tailwindcss'>
+      @layer utilities { .prose a { text-decoration: none; } .prose a:hover {
+      text-decoration: none; } }
+    </style>
+  </head>
+  <body class='dark:bg-zinc-900'>
+
+    <div class='container mx-auto mb-10 px-4 prose dark:prose-invert'>
+      <h1 class='text-7xl mb-0 text-primary select-none'>✨ Album AI</h1>
+      <h2 class='mb-8 text-gray-100/80'>家庭AI相册, 与相册对话</h2>
+      <!-- 搜索功能 -->
+
+      <div class="mt-10">
+        <h2 class="text-2xl font-bold">图片搜索</h2>
+        <form action="/" method="get" class="flex my-4">
+          ✨ <input
+            type="text"
+            name="searchQuery"
+            placeholder="搜索图片..."
+            class="grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-zinc-800 dark:border-zinc-700"
+          />
+          <button
+            type="submit"
+            class="px-6 py-2 bg-primary/60 text-white rounded-r-md hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+          >搜索</button>
+        </form>
+      </div>
+
+        <a href='/?searchQuery=安然宝贝' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>安然宝贝</a>
+        <a href='/?searchQuery=庆祝生日' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>庆祝生日</a>
+        <a href='/?searchQuery=毛里求斯海边' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>毛里求斯海边</a>
+        <a href='/?searchQuery=三亚小孩玩沙子' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>三亚小孩玩沙子</a>
+        <a href='/?searchQuery=烟花夜景' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>烟花夜景</a>
+        <a href='/?searchQuery=安琪在游乐场' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>安琪在游乐场</a>
+        <a href='/?searchQuery=女生合影' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>女生合影</a>
+        <a href='/?searchQuery=人在旅途' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>人在旅途</a>
+        <a href='/?searchQuery=滑雪' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>滑雪</a>
+        <a href='/?searchQuery=春节合影' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>春节合影</a>
+        <a href='/?searchQuery=山顶遥望' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>山顶遥望</a>
+
+      {{#if searchResults}}
+        <div class="mt-10">
+          <h2 class="text-2xl font-bold">搜索: {{searchQuery}}</h2>
+          <div id="searchResults" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {{#each searchResults}}
+              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.displayText}}"  class="w-full h-48 object-cover rounded-lg cursor-pointer" >
+            {{/each}}
+          </div>
+        </div>
+      {{/if}}
+
+      {{#if surroundingImages}}
+        <div class="mt-10">
+          <h2 class="text-2xl font-bold">Surrounding Images of : {{fId}}</h2>
+          <div id="surroundingImages" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {{#each surroundingImages}}
+              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.displayText}}"  class="w-full h-48 object-cover rounded-lg cursor-pointer" >
+            {{/each}}
+          </div>
+        </div>
+      {{/if}}
+
+
+      <hr>
+      <hr>
+
+            <!-- Chat input query form -->
+        <div class="mt-10">
+          <h2 class="text-2xl font-bold">与相册对话</h2>
+          <form action='/' method='get' class="flex my-4">
+              ✨ <input
+                type='text'
+                name='query'
+                placeholder='对话...'
+                value='{{query}}'
+                class='grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-primary dark:bg-zinc-800 dark:border-zinc-700'
+              />
+              <button
+                type='submit'
+                class="px-6 py-2 bg-primary/60 text-white rounded-r-md hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+              >问话</button>
+          </form>
+        </div>
+        
+      {{#if answer}}        
+        <div class="container mx-auto bg-zinc-800/60 rounded-xl px-14 py-10 shadow-md mb-10 min-h-96 prose prose-invert prose-img:rounded-xl prose-img:max-h-[500px] prose-img:mx-auto">
+          <h2 class="text-2xl font-bold">
+            Answer:
+          </h2>
+          <p class="border-b border-zinc-200/10"></p>
+          <div class='' id='gallery' >
+          <!-- Gallery images will be dynamically inserted here -->
+          </div>  
+        </div>
+      {{/if}}
+
+        <a href='/?query=海边度假' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>海边度假</a>
+        <a href='/?query=舌尖上的美味' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>舌尖上的美味</a>
+        <a href='/?query=cute animals' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>可爱的动物</a>
+        <a href='/?query=庆祝节日' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>庆祝节日</a>
+        <a href='/?query=人在旅途' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>人在旅途</a>
+        <a href='/?query=给妈妈送礼物' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>给妈妈送礼物</a>
+        <a href='/?query=让我感到温暖的照片' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>让我感到温暖的照片</a>
+        <a href='/?query=一群小孩' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>一群小孩</a>
+        <a href='/?query=2008年春节合影' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>2008年春节合影</a>
+        <a href='/?query=重庆夜景人像' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>重庆夜景</a>
+        <a href='/?query=大人带着小孩草原合骑一匹马' class='text-primary bg-primary/10 hover:bg-primary/30 px-4 py-1 rounded-xl whitespace-nowrap'>大人带着小孩草原合骑一匹马</a>
+
+    </div>
+
+<script>
+  console.log('Gallery script is running');
+  let currentImageIndex = 0;
+  const images = [];
+
+  /** -- 这段代码无用 error('Gallery element not found')
+  function renderMarkdownToGallery(message) {
+    const gallery = document.getElementById('gallery');
+    if (!gallery) {
+      console.error('Gallery element not found');
+      return;
+    }
+    console.log('Rendering markdown to gallery');
+    // Convert Markdown to HTML using marked
+    const htmlContent = marked.parse(message);
+    // Set the HTML content to the gallery element
+    gallery.innerHTML = htmlContent;
+  }
+  **/
+
+  // Use DOMContentLoaded event for answer
+  document.addEventListener('DOMContentLoaded', () => {
+    // Assume message is injected through server-side rendering
+    const answer = `{{{ answer }}}`;
+    renderMarkdownToGallery(answer);
+  });
+
+    // Use DOMContentLoaded event for serch
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchForm = document.querySelector('form[action="/search"]');
+    const searchResults = document.getElementById('searchResults');
+    /** -- 这段代码无用
+    if (searchForm) {
+      searchForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const searchQuery = e.target.searchQuery.value;
+        const response = await fetch(`/search?searchQuery=${encodeURIComponent(searchQuery)}`);
+        const results = await response.json();
+
+        results.forEach((result, index) => {
+          console.log('searchQuery Result:', result);  // 添加这行日志
+          const imgElement = document.createElement('img');
+          // ... 其余代码保持不变
+        });
+
+        searchResults.innerHTML = '';
+        images.length = 0; // 清空之前的图片数组
+        results.forEach((result, index) => {
+          const imgElement = document.createElement('img');
+          imgElement.src = result.url;
+          //imgElement.alt = result.fileName;
+          imgElement.alt = result.path;
+          imgElement.className = 'w-full h-48 object-cover rounded-lg cursor-pointer';
+          imgElement.onclick = () => showModal(result.fId,result.url, result.path, index);
+          searchResults.appendChild(imgElement);
+          
+          images.push({ fId: result.fId, src: result.url, alt: result.path });
+        });
+      });
+    }  ***/
+
+    // 为searchQuery 的searchResults添加点击事件
+    const existingImages = document.querySelectorAll('#searchResults img');
+    existingImages.forEach((img, index) => {
+      images.push({ fId: img.id, src: img.src, alt: img.alt });
+      img.onclick = () => showModal(img.id ,img.src, img.alt, index);
+    });
+
+    // 为surroundingImages 图片添加点击事件
+    const surroundingImages = document.querySelectorAll('#surroundingImages img');
+    surroundingImages.forEach((img, index) => {
+      images.push({ fId: img.id, src: img.src, alt: img.alt });
+      img.onclick = () => showModal(img.id ,img.src, img.alt, index);
+    });
+  });
+
+
+  function showModal(fId, src, alt, index) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalCaption = document.getElementById('modalCaption');
+    
+    currentImageIndex = index;
+    modalImage.src = src;
+    modalImage.alt = alt;
+    modalCaption.textContent = alt;
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // 移除旧的按钮（如果存在）
+    const oldButton = modal.querySelector('button:not([onclick="closeModal()"])');
+    if (oldButton) {
+      oldButton.remove();
+    }
+
+    // 添加新的按钮
+    const getSurroundingButton = document.createElement('button');
+    getSurroundingButton.textContent = '获取周围图片';
+    getSurroundingButton.className = 'absolute bottom-4 left-4 bg-primary text-white px-4 py-2 rounded';
+    getSurroundingButton.onclick = () => {
+      console.log('Getting surrounding images for fId:', fId);
+      getSurroundingImages(fId);
+      closeModal(); // 关闭模态框以显示新的 周围图片
+    };
+    modal.appendChild(getSurroundingButton);
+  }
+
+  function getSurroundingImages(fId) {
+    console.log('Fetching surrounding images for fId:', fId);
+    window.location.href = `/?fId=${fId}`;
+  }
+  function getSurroundingImages_NotWork(fId) {
+    console.log('Fetching surrounding images for fId:', fId);
+    fetch(`/?fId=${fId}`)
+      .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Data received:', data);
+        const searchResults = document.getElementById('searchResults');
+        searchResults.innerHTML = '';
+        if (data.surroundingImages && data.surroundingImages.length > 0) {
+          data.surroundingImages.forEach((image, index) => {
+            const imgElement = document.createElement('img');
+            imgElement.src = image.url;
+            imgElement.alt = image.displayText;
+            imgElement.className = 'w-full h-48 object-cover rounded-lg cursor-pointer';
+            imgElement.onclick = () => showModal(image.fId, image.url, image.displayText, index);
+            searchResults.appendChild(imgElement);
+          });
+          images = data.surroundingImages.map(image => ({
+            fId: image.fId,
+            src: image.url,
+            alt: image.displayText
+          }));
+        } else {
+          console.log('No surrounding images found');
+          searchResults.innerHTML = '<p>No surrounding images found</p>';
+        }
+      }) 
+      .catch(error => {
+        console.error('Error fetching surrounding images:', error);
+      });
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+      // 点击模态框外部关闭
+    document.getElementById('imageModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+  }
+
+
+  function changeImage(direction) {
+    currentImageIndex += direction;
+    if (currentImageIndex < 0) currentImageIndex = images.length - 1;
+    if (currentImageIndex >= images.length) currentImageIndex = 0;
+    
+    const image = images[currentImageIndex];
+    const modalImage = document.getElementById('modalImage');
+    const modalCaption = document.getElementById('modalCaption');
+    
+    modalImage.src = image.src;
+    modalImage.alt = image.alt;
+    modalCaption.textContent = image.alt;
+  }
+
+
+</script>
+
+  <!-- 在模态框中添加左右箭头按钮 -->
+  <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="max-w-4xl w-full p-4 relative">
+      <img id="modalImage" src="" alt="" class="w-full h-auto max-h-[80vh] object-contain rounded-lg">
+      <p id="modalCaption" class="text-white text-center mt-2"></p>
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-2xl">&times;</button>
+      <button onclick="changeImage(-1)" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&lt;</button>
+      <button onclick="changeImage(1)" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&gt;</button>
+    </div>
+  </div>
+
+  </body>
+</html>

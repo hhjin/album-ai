@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FileAlbum } from './file-scan.entity.js';
-import { In, MoreThan, Repository } from 'typeorm';
+import { In, MoreThan,LessThan, Repository } from 'typeorm';
 import { glob } from 'glob';
 import { configService } from '../config/config.service.js';
 import * as fs from 'node:fs';
@@ -573,7 +573,7 @@ export class FileService {
     });
 
     imagesData.forEach((item) => {
-      console.log(`### score: ${item.score.toFixed(3)},   ### path: ${item.path},    ### url: ${item.url}, `);
+      console.log(`### score: ${item.score.toFixed(3)},  ### fId: ${item.fId},  ### path: ${item.path},    ### url: ${item.url}, `);
     });
     
     return imagesData;
@@ -586,5 +586,44 @@ export class FileService {
         fId: BigInt(fId),
       },
     });
+  }
+
+  public async getSurroundingImages(fId: string, count: number) {
+    this.logger.log(`\n\n## getSurroundingImages  fId: ${fId}, count: ${count}`);
+    const currentFile = await this.fileRepository.findOne({
+      where: { fId: BigInt(fId) },
+    });
+  
+    if (!currentFile) {
+      return [];
+    }
+  
+    const halfCount = Math.floor(count / 2);
+  
+    const surroundingFiles = await this.fileRepository.find({
+      where: [
+        { fId: MoreThan(currentFile.fId) },
+        { fId: LessThan(currentFile.fId) },
+      ],
+      order: { fId: 'ASC' },
+      take: count,
+    });
+  
+    const imagesData = surroundingFiles.map((file) => {
+      const path = file.path.replace(/\\/g, '/');
+      const trimmedPath = path.replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
+      return {
+        fId: file.fId,
+        fileName: file.fileName,
+        path: trimmedPath,
+        url: `${configService.getHostName()}/api/v1/file/${file.fId}/download`,
+        displayText: trimmedPath,
+      };
+    });
+    
+    imagesData.forEach((item) => {
+      console.log(`### ### fId: ${item.fId},  ### path: ${item.path}, `);
+    });
+    return imagesData;
   }
 }

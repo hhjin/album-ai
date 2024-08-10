@@ -1,4 +1,4 @@
-import { Get, Controller, Render, Query, Logger } from '@nestjs/common';
+import { Get, Controller, Render, Query, Logger, Param } from '@nestjs/common';
 import { ChatService } from '../file/chat.service';
 import { FileService } from '../file/file.service';
 
@@ -13,11 +13,12 @@ export class PageController {
 
   @Get('/')
   @Render('index')
-  async root(@Query('query') query?: string, @Query('searchQuery') searchQuery?: string) {
+  async root(@Query('query') query?: string, @Query('searchQuery') searchQuery?: string, @Query('fId') fId?: string) {
     this.logger.log('query: ' + query);
     this.logger.log('searchQuery: ' + searchQuery);
+    this.logger.log('fId: ' + fId);
 
-  if (query) {
+    if (query) {
       const { content } = await this.chatService.chat({ text: query });
       this.logger.log('Answer:', content);
       return {
@@ -31,6 +32,14 @@ export class PageController {
       return {
         searchResults,
         searchQuery,
+      };
+    }
+
+    if (fId) {
+      const surroundingImages = await this.fileService.getSurroundingImages(fId, 20);
+      return {
+        surroundingImages,
+        fId,
       };
     }
 
