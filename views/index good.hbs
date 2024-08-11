@@ -57,7 +57,7 @@
 
       {{#if searchResults}}
         <div class="mt-10">
-          <h2 class="text-2xl font-bold">搜索: {{searchQuery}}</h2>
+          <h2 class="text-2xl font-bold"> ✨ {{searchQuery}} ✨  - 搜索结果:</h2>
           <div id="searchResults" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {{#each searchResults}}
               <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.displayText}}"  class="w-full h-48 object-cover rounded-lg cursor-pointer" >
@@ -68,7 +68,8 @@
 
       {{#if surroundingImages}}
         <div class="mt-10">
-          <h2 class="text-2xl font-bold">Surrounding Images of : {{fId}}</h2>
+          <h4 class="text-2xl font-bold">   {{path_of_parentImage }}</h4>
+          <h2 class="text-2xl font-bold"> ✨ 相邻图片 ✨  </h2>
           <div id="surroundingImages" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {{#each surroundingImages}}
               <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.displayText}}"  class="w-full h-48 object-cover rounded-lg cursor-pointer" >
@@ -77,11 +78,10 @@
         </div>
       {{/if}}
 
-
       <hr>
       <hr>
 
-            <!-- Chat input query form -->
+          <!-- Chat input query form -->
         <div class="mt-10">
           <h2 class="text-2xl font-bold">与相册对话</h2>
           <form action='/' method='get' class="flex my-4">
@@ -130,7 +130,7 @@
   let currentImageIndex = 0;
   const images = [];
 
-  /** -- 这段代码无用 error('Gallery element not found')
+  //** -- 用于Chat Answer 展现 ， Search 时会报错Gallery element not found
   function renderMarkdownToGallery(message) {
     const gallery = document.getElementById('gallery');
     if (!gallery) {
@@ -143,8 +143,7 @@
     // Set the HTML content to the gallery element
     gallery.innerHTML = htmlContent;
   }
-  **/
-
+ 
   // Use DOMContentLoaded event for answer
   document.addEventListener('DOMContentLoaded', () => {
     // Assume message is injected through server-side rendering
@@ -187,8 +186,8 @@
     }  ***/
 
     // 为searchQuery 的searchResults添加点击事件
-    const existingImages = document.querySelectorAll('#searchResults img');
-    existingImages.forEach((img, index) => {
+    const searchImages = document.querySelectorAll('#searchResults img');
+    searchImages.forEach((img, index) => {
       images.push({ fId: img.id, src: img.src, alt: img.alt });
       img.onclick = () => showModal(img.id ,img.src, img.alt, index);
     });
@@ -199,6 +198,16 @@
       images.push({ fId: img.id, src: img.src, alt: img.alt });
       img.onclick = () => showModal(img.id ,img.src, img.alt, index);
     });
+
+        // 为chat 的searchResults添加点击事件
+    const galleryImages = document.querySelectorAll('#gallery img');
+    galleryImages.forEach((img, index) => {
+      const srcParts = img.src.split('/');
+      const fId = srcParts[srcParts.length - 2]; // 提取倒数第二个部分作为 fId
+      images.push({ fId: fId, src: img.src, alt: img.alt });
+      img.onclick = () => showModal(fId, img.src, img.alt, index);
+    });
+
   });
 
 
@@ -215,22 +224,12 @@
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 
-    // 移除旧的按钮（如果存在）
-    const oldButton = modal.querySelector('button:not([onclick="closeModal()"])');
-    if (oldButton) {
-      oldButton.remove();
-    }
-
-    // 添加新的按钮
-    const getSurroundingButton = document.createElement('button');
-    getSurroundingButton.textContent = '获取周围图片';
-    getSurroundingButton.className = 'absolute bottom-4 left-4 bg-primary text-white px-4 py-2 rounded';
+    // 更新"获取周围图片"按钮的点击事件
     getSurroundingButton.onclick = () => {
       console.log('Getting surrounding images for fId:', fId);
       getSurroundingImages(fId);
-      closeModal(); // 关闭模态框以显示新的 周围图片
+      closeModal(); // 关闭模态框以显示新的周围图片
     };
-    modal.appendChild(getSurroundingButton);
   }
 
   function getSurroundingImages(fId) {
@@ -283,8 +282,7 @@
       }
     });
   }
-
-
+  
   function changeImage(direction) {
     currentImageIndex += direction;
     if (currentImageIndex < 0) currentImageIndex = images.length - 1;
@@ -298,20 +296,19 @@
     modalImage.alt = image.alt;
     modalCaption.textContent = image.alt;
   }
-
-
 </script>
 
-  <!-- 在模态框中添加左右箭头按钮 -->
+  <!-- 在模态框中添加左右箭头 ，关闭， 周围图片 的按钮 -->
   <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="max-w-4xl w-full p-4 relative">
-      <img id="modalImage" src="" alt="" class="w-full h-auto max-h-[80vh] object-contain rounded-lg">
-      <p id="modalCaption" class="text-white text-center mt-2"></p>
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-2xl">&times;</button>
-      <button onclick="changeImage(-1)" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&lt;</button>
-      <button onclick="changeImage(1)" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&gt;</button>
-    </div>
+  <div class="max-w-4xl w-full p-4 relative">
+    <img id="modalImage" src="" alt="" class="w-full h-auto max-h-[80vh] object-contain rounded-lg">
+    <p id="modalCaption" class="text-white text-center mt-2"></p>
+    <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-2xl">&times;</button>
+    <button onclick="changeImage(-1)" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&lt;</button>
+    <button onclick="changeImage(1)" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&gt;</button>
+    <button id="getSurroundingButton" class="absolute bottom-4 left-4 text-white text-2xl">&#8634;</button>
   </div>
+</div>
 
   </body>
 </html>

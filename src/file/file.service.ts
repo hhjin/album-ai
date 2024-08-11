@@ -540,7 +540,7 @@ export class FileService {
 
   public async searchImages(query: string) {
     const scoreThreshold = 0.23; // 设置相似度阈值
-    const results = await this.pgVectorStoreService.search(query, 30); // 限制结果为30张图片
+    const results = await this.pgVectorStoreService.search(query, 21); // 限制结果为21张图片
     if (!results || results.length === 0) {
       return [];
     }
@@ -580,36 +580,27 @@ export class FileService {
   }
 
 
-  public async findFile(fId: string) {
-    return await this.fileRepository.findOne({
-      where: {
-        fId: BigInt(fId),
-      },
-    });
-  }
-
-  public async getSurroundingImages(fId: string, count: number) {
-    this.logger.log(`\n\n## getSurroundingImages  fId: ${fId}, count: ${count}`);
-    const currentFile = await this.fileRepository.findOne({
-      where: { fId: BigInt(fId) },
-    });
-  
-    if (!currentFile) {
-      return [];
-    }
-  
+  public async getSurroundingImages(currentFile :FileAlbum, count: number) {
+    this.logger.log(`\n\n## getSurroundingImages  fId: ${currentFile.fId},  path: ${currentFile.path},  count: ${count}`);
+    
     const halfCount = Math.floor(count / 2);
-  
-    const surroundingFiles = await this.fileRepository.find({
+    const surroundingFiles1 = await this.fileRepository.find({
       where: [
         { fId: MoreThan(currentFile.fId) },
-        { fId: LessThan(currentFile.fId) },
       ],
       order: { fId: 'ASC' },
-      take: count,
+      take: halfCount,
+    });
+
+    const surroundingFiles2 = await this.fileRepository.find({
+      where: [
+        { fId: LessThan(currentFile.fId) },
+      ],
+      order: { fId: 'DESC' },
+      take: halfCount,
     });
   
-    const imagesData = surroundingFiles.map((file) => {
+    const imagesData = surroundingFiles2.reverse().map((file) => {
       const path = file.path.replace(/\\/g, '/');
       const trimmedPath = path.replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
       return {
@@ -620,10 +611,40 @@ export class FileService {
         displayText: trimmedPath,
       };
     });
+
+    // add currentFile to imagesData
+    imagesData.push({
+      fId: currentFile.fId,
+      fileName: currentFile.fileName,
+      path: currentFile.path.replace(/\\/g, '/').replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1'),
+      url: `${configService.getHostName()}/api/v1/file/${currentFile.fId}/download`,
+      displayText: currentFile.path,
+    })
+
+    imagesData.push(...surroundingFiles1.map((file) => {
+      const path = file.path.replace(/\\/g, '/');
+      const trimmedPath = path.replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
+      return {
+        fId: file.fId,
+        fileName: file.fileName,
+        path: trimmedPath,
+        url: `${configService.getHostName()}/api/v1/file/${file.fId}/download`,
+        displayText: trimmedPath,
+      };
+    }));
     
     imagesData.forEach((item) => {
       console.log(`### ### fId: ${item.fId},  ### path: ${item.path}, `);
     });
     return imagesData;
+  }
+
+
+  public async findFile(fId: string) {
+    return await this.fileRepository.findOne({
+      where: {
+        fId: BigInt(fId),
+      },
+    });
   }
 }

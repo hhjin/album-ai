@@ -36,10 +36,14 @@ export class PageController {
     }
 
     if (fId) {
-      const surroundingImages = await this.fileService.getSurroundingImages(fId, 20);
+      const currentFile = await this.fileService.findFile(fId);
+      if (!currentFile) 
+        return ;
+      const surroundingImages = await this.fileService.getSurroundingImages(currentFile, 20);
+      const path_of_parentImage = currentFile.path.replace(/\\/g, '/').replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
       return {
         surroundingImages,
-        fId,
+        path_of_parentImage,
       };
     }
 
