@@ -44,10 +44,10 @@ export class TaskService {
 
   @Cron('*/20 * * * * *') // 每20秒执行一次heartBeating， 
   async heartBeating() {
-    // heartBeating 主要用于快速开始第一次执行，不管各任务的定时如何设置
+     // heartBeating 主要用于快速开始第一次执行，不管各任务的定时如何设置
     this.logger.log('Heart Beating ...');
     //await this.fileService.heartBeating (initFileScan=false);  不能像在 Python 中那样直接在方法调用时指定参数名
-    await this.fileService.heartBeating(true);
+    await this.fileService.heartBeating(false);
   }
 
 

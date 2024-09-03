@@ -2,6 +2,8 @@
 /dist
 /node_modules
 /build
+.stfolder
+.stversions
 postgres_data*
 images*
 .env*

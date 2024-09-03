@@ -1,0 +1,132 @@
+{
+    "gps": {
+      "GPSAltitude": 0,
+      "GPSLatitude": [40, 1, 33.658447],
+      "GPSDateStamp": "2020:03:15",
+      "GPSLongitude": [116, 23, 40.999145],
+      "GPSTimeStamp": [3, 3, 44],
+      "GPSVersionID": [2, 2, 0, 0],
+      "GPSAltitudeRef": 1,
+      "GPSLatitudeRef": "N",
+      "GPSLongitudeRef": "E",
+      "GPSProcessingMethod": "CELLID"
+    },
+    "exif": {
+      "ISO": 50,
+      "Flash": 24,
+      "FNumber": 1.8,
+      "Contrast": 0,
+      "MakerNote": {
+        "0": 35,
+        "1": 35,
+        "2": 42,
+        "3": 42,
+        "4": 99,
+        "5": 111,
+        "6": 102,
+        "7": 0
+      },
+      "SceneType": {
+        "0": 1
+      },
+      "Sharpness": 0,
+      "ColorSpace": 1,
+      "CreateDate": "2020:03:15 11:03:45",
+      "FileSource": {
+        "0": 3
+      },
+      "Saturation": 0,
+      "SubSecTime": "985320",
+      "ExifVersion": {
+        "0": 48,
+        "1": 50,
+        "2": 49,
+        "3": 48
+      },
+      "FocalLength": 3.95,
+      "GainControl": 0,
+      "LightSource": 1,
+      "DocumentName": {},
+      "ExposureMode": 0,
+      "ExposureTime": 0.000605,
+      "MeteringMode": 5,
+      "WhiteBalance": 0,
+      "ApertureValue": 1.69,
+      "InteropOffset": 8502,
+      "SensingMethod": 2,
+      "CustomRendered": 1,
+      "ExifImageWidth": 2976,
+      "BrightnessValue": 0,
+      "ExifImageHeight": 3968,
+      "ExposureProgram": 2,
+      "FlashpixVersion": {
+        "0": 48,
+        "1": 49,
+        "2": 48,
+        "3": 48
+      },
+      "DateTimeOriginal": "2020:03:15 11:03:45",
+      "DigitalZoomRatio": 1,
+      "MaxApertureValue": 1.69,
+      "SceneCaptureType": 0,
+      "ShutterSpeedValue": 29.8973,
+      "SubSecTimeOriginal": "985320",
+      "SubSecTimeDigitized": "985320",
+      "ExposureCompensation": 0,
+      "SubjectDistanceRange": 0,
+      "CompressedBitsPerPixel": 0.95,
+      "ComponentsConfiguration": {
+        "0": 1,
+        "1": 2,
+        "2": 3,
+        "3": 0
+      },
+      "FocalLengthIn35mmFormat": 27
+    },
+    "image": {
+      "Make": "HUAWEI",
+      "Model": "VKY-AL00",
+      "GPSInfo": 8532,
+      "Software": "VKY-AL00 9.1.0.210(C00E77R1P12)",
+      "ExifOffset": 286,
+      "ImageWidth": 2976,
+      "ModifyDate": "2020:03:15 11:03:45",
+      "ImageHeight": 3968,
+      "Orientation": 0,
+      "XResolution": 72,
+      "YResolution": 72,
+      "BitsPerSample": [8, 8, 8],
+      "ResolutionUnit": 2,
+      "YCbCrPositioning": 1,
+      "DeviceSettingDescription": {
+        "0": 105,
+        "1": 112,
+        "2": 112,
+        "3": 0
+      }
+    },
+    "makernote": {
+      "error": "Unable to extract Makernote information as it is in an unsupported or unrecognized format."
+    },
+    "thumbnail": {
+      "ImageWidth": 384,
+      "Compression": 6,
+      "ImageHeight": 512,
+      "Orientation": 0,
+      "XResolution": 72,
+      "YResolution": 72,
+      "ResolutionUnit": 2,
+      "ThumbnailLength": 48958,
+      "ThumbnailOffset": 8888
+    },
+    "interoperability": {
+      "InteropIndex": "R98",
+      "InteropVersion": {
+        "0": 48,
+        "1": 49,
+        "2": 48,
+        "3": 48
+      }
+    }
+  }
+  
