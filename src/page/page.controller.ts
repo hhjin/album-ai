@@ -13,11 +13,11 @@ export class PageController {
 
   @Get('/')
   @Render('index')
-  async root(@Query('query') query?: string, @Query('searchQuery') searchQuery?: string, @Query('fId') fId?: string) {
-    this.logger.log('query: ' + query);
-    this.logger.log('searchQuery: ' + searchQuery);
-    this.logger.log('fId: ' + fId);
-
+  async root(@Query('query') query?: string, @Query('searchQuery') searchQuery?: string, @Query('fId') fId?: string, @Query('nearbyFId') nearbyFId?: string) {
+    if (query) this.logger.log('query: ' + query);
+    if (searchQuery) this.logger.log('searchQuery: ' + searchQuery);
+    if (fId) this.logger.log('fId: ' + fId);
+    if (nearbyFId) this.logger.log('nearbyFId: ' + nearbyFId);
     if (query) {
       const { content } = await this.chatService.chat({ text: query });
       this.logger.log('Answer:', content);
@@ -43,6 +43,18 @@ export class PageController {
       const path_of_parentImage = currentFile.path.replace(/\\/g, '/').replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
       return {
         surroundingImages,
+        path_of_parentImage,
+      };
+    }
+
+    if (nearbyFId) {
+      const currentFile = await this.fileService.findFile(nearbyFId);
+      if (!currentFile) 
+        return ;
+      const path_of_parentImage = currentFile.path.replace(/\\/g, '/').replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
+      const nearbyImages = await this.fileService.getNearbyImages(BigInt(nearbyFId),12);
+      return {
+        nearbyImages,
         path_of_parentImage,
       };
     }

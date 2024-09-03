@@ -665,4 +665,97 @@ export class FileService {
       },
     });
   }
+
+  async getNearbyImages(fId: bigint, limit: number = 9): Promise<any[]> {
+    const currentImage = await this.fileRepository.findOne({ where: { fId } });
+    if (!currentImage || !currentImage.exif || !currentImage.exif['gps']) {
+      this.logger.log('\n### 没有 Exif 信息。');
+      return [];
+    }
+
+    const { GPSLatitude, GPSLongitude } = currentImage.exif['gps'];
+    if (!GPSLatitude || !GPSLongitude) {
+      this.logger.log('\n### 没有 GPS 信息。');
+      return [];
+    }
+
+    const nearbyImages = await this.fileRepository
+      .createQueryBuilder('file')
+      .where(`
+        file.exif->'gps'->'GPSLatitude' IS NOT NULL AND
+        file.exif->'gps'->'GPSLongitude' IS NOT NULL AND
+        jsonb_array_length(file.exif->'gps'->'GPSLatitude') = 3 AND
+        jsonb_array_length(file.exif->'gps'->'GPSLongitude') = 3 AND
+        (file.exif->'gps'->'GPSLatitude'->0)::text != 'null' AND
+        (file.exif->'gps'->'GPSLatitude'->1)::text != 'null' AND
+        (file.exif->'gps'->'GPSLatitude'->2)::text != 'null' AND
+        (file.exif->'gps'->'GPSLongitude'->0)::text != 'null' AND
+        (file.exif->'gps'->'GPSLongitude'->1)::text != 'null' AND
+        (file.exif->'gps'->'GPSLongitude'->2)::text != 'null' AND
+        (file.exif->'gps'->'GPSLatitude'->0)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLatitude'->1)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLatitude'->2)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLongitude'->0)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLongitude'->1)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLongitude'->2)::text::float IS NOT NULL
+      `)
+      .orderBy(`
+        ST_Distance(
+          ST_SetSRID(ST_MakePoint(
+            (file.exif->'gps'->'GPSLongitude'->0)::text::float + 
+            (file.exif->'gps'->'GPSLongitude'->1)::text::float / 60 + 
+            (file.exif->'gps'->'GPSLongitude'->2)::text::float / 3600,
+            (file.exif->'gps'->'GPSLatitude'->0)::text::float + 
+            (file.exif->'gps'->'GPSLatitude'->1)::text::float / 60 + 
+            (file.exif->'gps'->'GPSLatitude'->2)::text::float / 3600
+          ), 4326)::geography,
+          ST_SetSRID(ST_MakePoint(:GPSLongitude, :GPSLatitude), 4326)::geography
+        )
+      `, 'ASC')
+      .setParameters({ 
+        GPSLatitude: this.arrayToDD(GPSLatitude),
+        GPSLongitude: this.arrayToDD(GPSLongitude)
+      })
+      .limit(limit)
+      .getMany();
+    
+    this.logger.log('\n### getNearbyImages 结果数量：' + nearbyImages.length);
+
+    const imagesData = nearbyImages.map((file) => {
+      const path = file.path.replace(/\\/g, '/');
+      const trimmedPath = path.replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
+      const formattedPhotoTime = file.photo_time ? this.formatPhotoTime(file.photo_time) : ' ';
+      return {
+        fId: file.fId,
+        fileName: file.fileName,
+        path: trimmedPath,
+        url: `${configService.getHostName()}/api/v1/file/${file.fId}/download`,
+        photo_time: formattedPhotoTime,
+        exif: file.exif || ' ',
+      };
+    });
+
+
+    // print current currentImage info
+    console.log(`### currentImage fId: ${currentImage.fId},  ### path: ${currentImage.path},   ### photo_time: ${currentImage.photo_time},   ### GPSLatitude: ${(currentImage.exif as any)?.gps?.GPSLatitude ?? 'N/A'},   ### GPSLongitude: ${(currentImage.exif as any)?.gps?.GPSLongitude ?? 'N/A'} `);
+    imagesData.forEach((item) => {
+    console.log(`### nearbyImages fId: ${item.fId},  ### path: ${item.path},   ### photo_time: ${item.photo_time},   ### GPSLatitude: ${(item.exif as any)?.gps?.GPSLatitude ?? 'N/A'},   ### GPSLongitude: ${(item.exif as any)?.gps?.GPSLongitude ?? 'N/A'} `);
+    });
+    return imagesData;
+  }
+
+  private arrayToDD(coords: any[]): number {
+    if (!Array.isArray(coords) || coords.length !== 3) {
+      throw new Error('无效的 GPS 坐标格式');
+    }
+    const [deg, min, sec] = coords.map(val => {
+      if (val === null || val === 'null' || isNaN(parseFloat(val))) {
+        throw new Error('GPS 坐标包含无效值');
+      }
+      return parseFloat(val);
+    });
+    return deg + min / 60 + sec / 3600;
+  }
+
+  
 }

@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: ivanlonel/postgis-with-extensions
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: 123456

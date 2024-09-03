@@ -42,7 +42,7 @@ export class TaskService {
     await this.fileService.embedding();
   }
 
-  @Cron('*/20 * * * * *') // 每20秒执行一次heartBeating， 
+  //@Cron('*/20 * * * * *') // 每20秒执行一次heartBeating， 
   async heartBeating() {
      // heartBeating 主要用于快速开始第一次执行，不管各任务的定时如何设置
     this.logger.log('Heart Beating ...');

@@ -78,6 +78,17 @@
         </div>
       {{/if}}
 
+      {{#if nearbyImages}}
+        <div class="mt-10">
+          <h2 class="text-2xl font-bold"> ✨ 附近图片 ✨ </h2>
+          <div id="nearbyImages" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {{#each nearbyImages}}
+              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.path}}  {{#if this.photo_time}}|{{this.photo_time}}{{else}}{{''}}{{/if}}" class="w-full h-48 object-cover rounded-lg cursor-pointer" >
+            {{/each}}
+          </div>
+        </div>
+      {{/if}}
+
       <hr>
       <hr>
 
@@ -208,6 +219,13 @@
       img.onclick = () => showModal(fId, img.src, img.alt, index);
     });
 
+    // 为nearbyImages图片添加点击事件
+    const nearbyImages = document.querySelectorAll('#nearbyImages img');
+    nearbyImages.forEach((img, index) => {
+      images.push({ fId: img.id, src: img.src, alt: img.alt });
+      img.onclick = () => showModal(img.id, img.src, img.alt, index);
+    });
+
   });
 
 
@@ -215,6 +233,7 @@
     const modal = document.getElementById('imageModal');
     const modalImage = document.getElementById('modalImage');
     const modalCaption = document.getElementById('modalCaption');
+    const getNearbyButton = document.getElementById('getNearbyButton');
     
     currentImageIndex = index;
     modalImage.src = src;
@@ -235,6 +254,19 @@
       getSurroundingImages(fId);
       closeModal(); // 关闭模态框以显示新的周围图片
     };
+
+    // 检查是否存在exif和gps信息
+    const image = images[currentImageIndex];
+    if (image.exif && image.exif.gps && image.exif.gps.latitude && image.exif.gps.longitude) {
+      getNearbyButton.classList.remove('hidden');
+      getNearbyButton.onclick = () => {
+        console.log('Getting nearby images for fId:', fId);
+        getNearbyImages(fId);
+        closeModal(); // 关闭模态框以显示新的附近图片
+      };
+    } else {
+      getNearbyButton.classList.add('hidden');
+    }
   }
 
   function getSurroundingImages(fId) {
@@ -303,6 +335,11 @@
     const [path, time] = image.alt.split('|');
     modalCaption.innerHTML = `<div>${path}</div><div>${time || ' '}</div>`;
   }
+
+  function getNearbyImages(fId) {
+    console.log('Fetching nearby images for fId:', fId);
+    window.location.href = `/?nearbyFId=${fId}`;
+  }
 </script>
 
   <!-- 在模态框中添加左右箭头 ，关闭， 周围图片 的按钮 -->
@@ -314,6 +351,8 @@
     <button onclick="changeImage(-1)" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&lt;</button>
     <button onclick="changeImage(1)" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&gt;</button>
     <button id="getSurroundingButton" class="absolute bottom-4 left-4 text-white text-2xl">&#8634;</button>
+    <!-- 添加新的按钮用于获取附近图片，但初始状态为隐藏 -->
+    <button id="getNearbyButton" class="absolute bottom-4 right-4 text-white text-2xl hidden">&#127758;</button>
   </div>
 </div>
 
