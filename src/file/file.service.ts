@@ -550,7 +550,7 @@ export class FileService {
       const score = item[1];
       return score <= scoreThreshold; // 过滤掉大于 scoreThreshold 的结果
     });
-    //console.log(`fId: ${fId}, path: ${trimmedPath}, score: ${score}`); // 打印 fId, path 和 score
+
     const fIds = filteredResults.map((item) => item[0].metadata.fId);
     const fileAlbums = await this.fileRepository.find({
       where: {
@@ -562,25 +562,26 @@ export class FileService {
       const file = fileAlbums.find(f => f.fId.toString() === item[0].metadata.fId);
       const path = file.path.replace(/\\/g, '/');
       const trimmedPath = path.replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
+      const formattedPhotoTime = file.photo_time ? this.formatPhotoTime(file.photo_time) : ' ';
       return {
         fId: file.fId,
         fileName: file.fileName,
-        path:trimmedPath,
+        path: trimmedPath,
         url: `${configService.getHostName()}/api/v1/file/${file.fId}/download`,
-        score: item[1],
-        displayText: `${trimmedPath} ${item[1].toFixed(3)}`, // 预处理显示文本
+        score: item[1].toFixed(3),
+        photo_time: formattedPhotoTime,
+        exif: file.exif || ' ',
       };
     });
 
     imagesData.forEach((item) => {
-      console.log(`### score: ${item.score.toFixed(3)},  ### fId: ${item.fId},  ### path: ${item.path},    ### url: ${item.url}, `);
+      console.log(`### score: ${item.score},  ### fId: ${item.fId},  ### path: ${item.path},    ### url: ${item.url}, `);
     });
     
     return imagesData;
   }
 
-
-  public async getSurroundingImages(currentFile :FileAlbum, count: number) {
+  public async getSurroundingImages(currentFile: FileAlbum, count: number) {
     this.logger.log(`\n\n## getSurroundingImages  fId: ${currentFile.fId},  path: ${currentFile.path},  count: ${count}`);
     
     const halfCount = Math.floor(count / 2);
@@ -603,40 +604,57 @@ export class FileService {
     const imagesData = surroundingFiles2.reverse().map((file) => {
       const path = file.path.replace(/\\/g, '/');
       const trimmedPath = path.replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
+      const formattedPhotoTime = file.photo_time ? this.formatPhotoTime(file.photo_time) : ' ';
       return {
         fId: file.fId,
         fileName: file.fileName,
         path: trimmedPath,
         url: `${configService.getHostName()}/api/v1/file/${file.fId}/download`,
-        displayText: trimmedPath,
+        photo_time: formattedPhotoTime,
+        exif: file.exif || ' ',
       };
     });
 
-    // add currentFile to imagesData
+    // 添加 currentFile 到 imagesData
+    const currentFormattedPhotoTime = currentFile.photo_time ? this.formatPhotoTime(currentFile.photo_time) : ' ';
     imagesData.push({
       fId: currentFile.fId,
       fileName: currentFile.fileName,
       path: currentFile.path.replace(/\\/g, '/').replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1'),
       url: `${configService.getHostName()}/api/v1/file/${currentFile.fId}/download`,
-      displayText: currentFile.path,
-    })
+      photo_time: currentFormattedPhotoTime,
+      exif: currentFile.exif || ' ',
+    });
 
     imagesData.push(...surroundingFiles1.map((file) => {
       const path = file.path.replace(/\\/g, '/');
       const trimmedPath = path.replace(/^.*?(\/[^/]+\/[^/]+\/[^/]+)$/, '$1');
+      const formattedPhotoTime = file.photo_time ? this.formatPhotoTime(file.photo_time) : ' ';
       return {
         fId: file.fId,
         fileName: file.fileName,
         path: trimmedPath,
         url: `${configService.getHostName()}/api/v1/file/${file.fId}/download`,
-        displayText: trimmedPath,
+        photo_time: formattedPhotoTime,
+        exif: file.exif || ' ',
       };
     }));
     
     imagesData.forEach((item) => {
-      console.log(`### ### fId: ${item.fId},  ### path: ${item.path}, `);
-    });
+      console.log(`### ### fId: ${item.fId},  ### path: ${item.path},  ### photo_time: ${item.photo_time}`);
+    }); 
     return imagesData;
+  }
+
+  private formatPhotoTime(photoTime: Date): string {
+    return photoTime.toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false, // 24小时制
+  }).replace(',', ''); // 去掉日期和时间之间的逗号
   }
 
 
