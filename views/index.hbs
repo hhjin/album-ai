@@ -60,7 +60,7 @@
           <h2 class="text-2xl font-bold"> ✨ {{searchQuery}} ✨  - 搜索结果:</h2>
           <div id="searchResults" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {{#each searchResults}}
-              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.path}} {{this.score}}  {{#if this.photo_time}}|{{this.photo_time}}{{else}}{{''}}{{/if}}"  class="w-full h-48 object-cover rounded-lg cursor-pointer" >
+              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.path}} {{this.score}}  {{#if this.photo_time}}|{{this.photo_time}}{{else}}{{''}}{{/if}}"  data-gps="{{#if this.exif.gps}}{{this.exif.gps.GPSLatitude}},{{this.exif.gps.GPSLongitude}}{{/if}}"  class="w-full h-48 object-cover rounded-lg cursor-pointer" >
             {{/each}}
           </div>
         </div>
@@ -72,7 +72,7 @@
           <h2 class="text-2xl font-bold"> ✨ 相邻图片 ✨  </h2>
           <div id="surroundingImages" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {{#each surroundingImages}}
-              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.path}}  {{#if this.photo_time}}|{{this.photo_time}}{{else}}{{''}}{{/if}}"   class="w-full h-48 object-cover rounded-lg cursor-pointer" >
+              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.path}}  {{#if this.photo_time}}|{{this.photo_time}}{{else}}{{''}}{{/if}}"  data-gps="{{#if this.exif.gps}}{{this.exif.gps.GPSLatitude}},{{this.exif.gps.GPSLongitude}}{{/if}}"  class="w-full h-48 object-cover rounded-lg cursor-pointer" >
             {{/each}}
           </div>
         </div>
@@ -83,7 +83,7 @@
           <h2 class="text-2xl font-bold"> ✨ 附近图片 ✨ </h2>
           <div id="nearbyImages" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {{#each nearbyImages}}
-              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.path}}  {{#if this.photo_time}}|{{this.photo_time}}{{else}}{{''}}{{/if}}" class="w-full h-48 object-cover rounded-lg cursor-pointer" >
+              <img id="{{this.fId}}" src="{{this.url}}" alt="{{this.path}}  {{#if this.photo_time}}|{{this.photo_time}}{{else}}{{''}}{{/if}}" data-gps="{{#if this.exif.gps}}{{this.exif.gps.GPSLatitude}},{{this.exif.gps.GPSLongitude}}{{/if}}" class="w-full h-48 object-cover rounded-lg cursor-pointer" >
             {{/each}}
           </div>
         </div>
@@ -199,15 +199,17 @@
     // 为searchQuery 的searchResults添加点击事件
     const searchImages = document.querySelectorAll('#searchResults img');
     searchImages.forEach((img, index) => {
-      images.push({ fId: img.id, src: img.src, alt: img.alt });
-      img.onclick = () => showModal(img.id ,img.src, img.alt, index);
+      const gpsData = img.dataset.gps;
+      images.push({ fId: img.id, src: img.src, alt: img.alt, gps: gpsData ? gpsData.split(',') : null });
+      img.onclick = () => showModal(img.id ,img.src, img.alt, gpsData,index);
     });
 
     // 为surroundingImages 图片添加点击事件
     const surroundingImages = document.querySelectorAll('#surroundingImages img');
     surroundingImages.forEach((img, index) => {
-      images.push({ fId: img.id, src: img.src, alt: img.alt });
-      img.onclick = () => showModal(img.id ,img.src, img.alt, index);
+       const gpsData = img.dataset.gps;
+       images.push({ fId: img.id, src: img.src, alt: img.alt, gps: gpsData ? gpsData.split(',') : null });
+      img.onclick = () => showModal(img.id ,img.src, img.alt,gpsData, index);
     });
 
         // 为chat 的searchResults添加点击事件
@@ -215,26 +217,25 @@
     galleryImages.forEach((img, index) => {
       const srcParts = img.src.split('/');
       const fId = srcParts[srcParts.length - 2]; // 提取倒数第二个部分作为 fId
-      images.push({ fId: fId, src: img.src, alt: img.alt });
+      images.push({ fId: img.id, src: img.src, alt: img.alt, gps: gpsData ? gpsData.split(',') : null });
       img.onclick = () => showModal(fId, img.src, img.alt, index);
     });
 
     // 为nearbyImages图片添加点击事件
     const nearbyImages = document.querySelectorAll('#nearbyImages img');
     nearbyImages.forEach((img, index) => {
-      images.push({ fId: img.id, src: img.src, alt: img.alt });
-      img.onclick = () => showModal(img.id, img.src, img.alt, index);
+      const gpsData = img.dataset.gps;
+      images.push({ fId: img.id, src: img.src, alt: img.alt, gps: gpsData ? gpsData.split(',') : null });
+      img.onclick = () => showModal(img.id, img.src, img.alt,gpsData, index);
     });
 
   });
 
 
-  function showModal(fId, src, alt, index) {
+  function showModal(fId, src, alt, gpsData, index) {
     const modal = document.getElementById('imageModal');
     const modalImage = document.getElementById('modalImage');
     const modalCaption = document.getElementById('modalCaption');
-    const getNearbyButton = document.getElementById('getNearbyButton');
-    
     currentImageIndex = index;
     modalImage.src = src;
     modalImage.alt = alt;
@@ -255,9 +256,40 @@
       closeModal(); // 关闭模态框以显示新的周围图片
     };
 
-    // 检查是否存在exif和gps信息
+    // 检查是否存在exif和gps信息, 决定是否 showNearbyButton 
     const image = images[currentImageIndex];
-    if (image.exif && image.exif.gps && image.exif.gps.latitude && image.exif.gps.longitude) {
+    showNearbyButton(fId, image.gps, gpsData)
+  }
+
+  function getSurroundingImages(fId) {
+    console.log('Fetching surrounding images for fId:', fId);
+    window.location.href = `/?fId=${fId}`;
+  }
+
+  function showNearbyButton(fId, gps, gpsData){
+    let gps_verify=gps ;
+    if (gpsData)
+      gps_verify=gpsData.split(',');
+    let isValidGPS = false;
+    if (gps && gps_verify && gps.length === 6 && gps_verify.length === 6) {
+      isValidGPS=true;
+      for (let i = 0; i < 6; i++) {
+        if (gps[i] !== gps_verify[i]) {
+          isValidGPS = false;
+          break;
+        }else{
+          if (isNaN(parseFloat(gps[i]))) {
+            isValidGPS = false;
+            break;
+          }
+        }
+      }
+    } 
+    //console.log('GPS       :', gps);  
+    console.log('GPS verify:', gps_verify); 
+    
+    const getNearbyButton = document.getElementById('getNearbyButton');
+    if (isValidGPS ) {
       getNearbyButton.classList.remove('hidden');
       getNearbyButton.onclick = () => {
         console.log('Getting nearby images for fId:', fId);
@@ -269,45 +301,6 @@
     }
   }
 
-  function getSurroundingImages(fId) {
-    console.log('Fetching surrounding images for fId:', fId);
-    window.location.href = `/?fId=${fId}`;
-  }
-  // 获取周围图片的函数， 目前不工作
-  function getSurroundingImages_NotWork(fId) {
-    console.log('Fetching surrounding images for fId:', fId);
-    fetch(`/?fId=${fId}`)
-      .then(response => {
-        console.log('Response received:', response);
-        return response.json();
-      })
-      .then(data => {
-        console.log('Data received:', data);
-        const searchResults = document.getElementById('searchResults');
-        searchResults.innerHTML = '';
-        if (data.surroundingImages && data.surroundingImages.length > 0) {
-          data.surroundingImages.forEach((image, index) => {
-            const imgElement = document.createElement('img');
-            imgElement.src = image.url;
-            imgElement.alt = image.displayText;
-            imgElement.className = 'w-full h-48 object-cover rounded-lg cursor-pointer';
-            imgElement.onclick = () => showModal(image.fId, image.url, image.displayText, index);
-            searchResults.appendChild(imgElement);
-          });
-          images = data.surroundingImages.map(image => ({
-            fId: image.fId,
-            src: image.url,
-            alt: image.displayText
-          }));
-        } else {
-          console.log('No surrounding images found');
-          searchResults.innerHTML = '<p>No surrounding images found</p>';
-        }
-      }) 
-      .catch(error => {
-        console.error('Error fetching surrounding images:', error);
-      });
-  }
 
   function closeModal() {
     const modal = document.getElementById('imageModal');
@@ -330,10 +323,14 @@
     const modalImage = document.getElementById('modalImage');
     const modalCaption = document.getElementById('modalCaption');
     
-    modalImage.src = image.src;
+    modalImage.src = image.src; 
     modalImage.alt = image.alt;
+     modalImage.gps = image.gps;
     const [path, time] = image.alt.split('|');
     modalCaption.innerHTML = `<div>${path}</div><div>${time || ' '}</div>`;
+
+    // 检查是否存在exif和gps信息, 决定是否 showNearbyButton 
+    showNearbyButton( image.fId, image.gps, null)
   }
 
   function getNearbyImages(fId) {
