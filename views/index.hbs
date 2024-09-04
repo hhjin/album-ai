@@ -19,6 +19,9 @@
       @layer utilities { .prose a { text-decoration: none; } .prose a:hover {
       text-decoration: none; } }
     </style>
+    <!-- 在<head>标签中添加Leaflet的CSS和JavaScript -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   </head>
   <body class='dark:bg-zinc-900'>
 
@@ -259,6 +262,11 @@
     // 检查是否存在exif和gps信息, 决定是否 showNearbyButton 
     const image = images[currentImageIndex];
     showNearbyButton(fId, image.gps, gpsData)
+
+    // 显示地图按钮
+    const showMapButton = document.getElementById('showMapButton');
+    showMapButton.classList.remove('hidden');
+    showMapButton.onclick = showMap;
   }
 
   function getSurroundingImages(fId) {
@@ -267,17 +275,17 @@
   }
 
   function showNearbyButton(fId, gps, gpsData){
-    let gps_verify=gps ;
+    let gps_verify = gps;
     if (gpsData)
-      gps_verify=gpsData.split(',');
+      gps_verify = gpsData.split(',');
     let isValidGPS = false;
     if (gps && gps_verify && gps.length === 6 && gps_verify.length === 6) {
-      isValidGPS=true;
+      isValidGPS = true;
       for (let i = 0; i < 6; i++) {
         if (gps[i] !== gps_verify[i]) {
           isValidGPS = false;
           break;
-        }else{
+        } else {
           if (isNaN(parseFloat(gps[i]))) {
             isValidGPS = false;
             break;
@@ -285,19 +293,25 @@
         }
       }
     } 
-    //console.log('GPS       :', gps);  
     console.log('GPS verify:', gps_verify); 
     
     const getNearbyButton = document.getElementById('getNearbyButton');
-    if (isValidGPS ) {
+    const showMapButton = document.getElementById('showMapButton');
+    
+    if (isValidGPS) {
       getNearbyButton.classList.remove('hidden');
       getNearbyButton.onclick = () => {
         console.log('Getting nearby images for fId:', fId);
         getNearbyImages(fId);
         closeModal(); // 关闭模态框以显示新的附近图片
       };
+      
+      // 显示地图按钮
+      showMapButton.classList.remove('hidden');
+      showMapButton.onclick = showMap;
     } else {
       getNearbyButton.classList.add('hidden');
+      showMapButton.classList.add('hidden');
     }
   }
 
@@ -329,13 +343,49 @@
     const [path, time] = image.alt.split('|');
     modalCaption.innerHTML = `<div>${path}</div><div>${time || ' '}</div>`;
 
-    // 检查是否存在exif和gps信息, 决定是否 showNearbyButton 
-    showNearbyButton( image.fId, image.gps, null)
+    // 检查是否存在exif和gps信息, 决定是否 showNearbyButton 和 showMapButton
+    showNearbyButton(image.fId, image.gps, null);
   }
 
   function getNearbyImages(fId) {
     console.log('Fetching nearby images for fId:', fId);
     window.location.href = `/?nearbyFId=${fId}`;
+  }
+
+  function showMap() {
+    const mapContainer = document.getElementById('mapContainer');
+    mapContainer.classList.remove('hidden');
+    mapContainer.classList.add('flex');
+
+    const map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const bounds = L.latLngBounds();
+    images.forEach(image => {
+      if (image.gps && image.gps.length === 6) {
+        const lat = parseFloat(image.gps[0]) + parseFloat(image.gps[1])/60 + parseFloat(image.gps[2])/3600;
+        const lon = parseFloat(image.gps[3]) + parseFloat(image.gps[4])/60 + parseFloat(image.gps[5])/3600;
+        if (!isNaN(lat) && !isNaN(lon)) {
+          L.marker([lat, lon]).addTo(map)
+            .bindPopup(`<img src="${image.src}" alt="${image.alt}" style="max-width:100px; max-height:100px;">`);
+          bounds.extend([lat, lon]);
+        }
+      }
+    });
+
+    if (!bounds.isValid()) {
+      map.setView([0, 0], 2);
+    } else {
+      map.fitBounds(bounds);
+    }
+  }
+
+  function closeMap() {
+    const mapContainer = document.getElementById('mapContainer');
+    mapContainer.classList.remove('flex');
+    mapContainer.classList.add('hidden');
   }
 </script>
 
@@ -344,13 +394,23 @@
   <div class="max-w-4xl w-full p-4 relative">
     <img id="modalImage" src="" alt="" class="w-full h-auto max-h-[80vh] object-contain rounded-lg">
     <p id="modalCaption" class="text-white text-center mt-2"></p>
-    <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-2xl">&times;</button>
+    <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-2xl bg-black rounded-full w-8 h-8 flex items-center justify-center">✖</button>
     <button onclick="changeImage(-1)" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&lt;</button>
     <button onclick="changeImage(1)" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&gt;</button>
     <button id="getSurroundingButton" class="absolute bottom-4 left-4 text-white text-2xl">&#8634;</button>
-    <!-- 添加新的按钮用于获取附近图片，但初始状态为隐藏 -->
-    <button id="getNearbyButton" class="absolute bottom-4 right-4 text-white text-2xl hidden">&#127758;</button>
+    <!-- 修改getNearbyButton的图标 -->
+    <button id="getNearbyButton" class="absolute bottom-4 right-4 text-white text-2xl hidden">&#127747;</button>
+    <button id="showMapButton" class="absolute bottom-4 right-20 text-white text-2xl hidden"> &#127758;</button>
   </div>
+</div>
+
+<!-- 修改地图容器,添加不透明的黑色关闭按钮 -->
+<div id="mapContainer" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="w-3/4 h-3/4 relative">
+    <div id="map" class="w-full h-full"></div>
+    <button onclick="closeMap()" class="absolute top-4 right-4 text-white text-2xl bg-black bg-opacity-50 rounded-full w-18 h-18 flex items-center justify-center">✖</button>  
+  </div>
+   <button onclick="closeMap()" class="absolute top-4 right-4 text-white text-2xl bg-black rounded-full w-8 h-8 flex items-center justify-center">✖</button>
 </div>
 
   </body>
