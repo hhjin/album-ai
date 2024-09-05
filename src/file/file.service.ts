@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FileAlbum } from './file-scan.entity.js';
-import { In, MoreThan,LessThan, Repository } from 'typeorm';
+import { In, MoreThan,LessThan, Repository, Not, IsNull } from 'typeorm';
 import { glob } from 'glob';
 import { configService } from '../config/config.service.js';
 import * as fs from 'node:fs';
@@ -27,15 +27,16 @@ export class FileService {
   private InitialExtractDescExecuted = false;
   private InitialEmbeddingExecuted = false;
   private hasUpdateStatusFromIgnore2InitTask = false;
+  private hasUpdateExifDataForEmbeddedFilesTask = false;
 
 
   public async heartBeating (initFileScan:boolean=true) {
-    if (this.hasHeartBeatingTask  )
+    if (this.hasHeartBeatingTask )
       return
     this.hasHeartBeatingTask=true
 
     try {
-
+      //this.updateExifDataForEmbeddedFiles();
       //this.updateStatusFromIgnore2Init();  
 
       if ( ! this.hasScanFileTask && ! this.InitialScanFileExecuted && initFileScan){
@@ -135,7 +136,7 @@ export class FileService {
       try {
         new ExifImage({ image: imagePath }, (error, exifData) => {
           if (error) {
-            this.logger.error(`获取 EXIF 数据出错: ${error.message}`);
+            //this.logger.error(`获取 EXIF 数据出错: ${error.message}`);
             resolve(null);  // 出错时返回 null
           } else {
             //this.logger.debug(`获取图像 EXIF 信息 ${imagePath}:\n${JSON.stringify(exifData, null, 2)}`);
@@ -538,6 +539,72 @@ export class FileService {
     }
   }
 
+  public async updateExifDataForEmbeddedFiles() {
+    if (this.hasUpdateExifDataForEmbeddedFilesTask) {
+      return;
+    }
+    this.hasUpdateExifDataForEmbeddedFilesTask = true;
+    this.logger.log('开始更新已嵌入文件的 EXIF 数据');
+    let processedCount = 0;
+    let updatedCount = 0;
+    let cursorId = 0n;
+
+    while (true) {
+      const files = await this.fileRepository.find({
+        where: {
+          fId: MoreThan(cursorId),
+          status: FileStatus.Embedding,
+        },
+        take: 100,
+        order: { fId: 'ASC' },
+      });
+
+      if (files.length === 0) {
+        break;
+      }
+
+      cursorId = files[files.length - 1].fId;
+
+      for (const file of files) {
+        processedCount++;
+        try {
+          if (!file.path.startsWith(process.env.ALBUM_PATH)) {
+            const regex = new RegExp(`^${process.env.ALBUM_PATH_OLD}`);
+            file.path = file.path.replace(regex, process.env.ALBUM_PATH);
+            file.path = file.path.replaceAll('\\', '/');
+            
+          }
+          const exifData = await this.getExifData(file.path);
+          const cleanedExifData = this.cleanExifData(exifData);
+          const photoTime = this.getPhotoTime(cleanedExifData);
+
+          const updateData: Partial<FileAlbum> = {
+            exif: cleanedExifData,
+          };
+
+          if (photoTime) {
+            updateData.photo_time = photoTime;
+          }
+          if (photoTime || cleanedExifData) {
+            await this.fileRepository.update(
+              { fId: file.fId },
+              updateData
+            );
+
+            updatedCount++;
+            if (processedCount % 100 === 0) {
+              this.logger.log(`已处理 ${processedCount} 个文件，更新了 ${updatedCount} 个文件的 EXIF 数据`);
+            }
+          }
+        } catch (error) {
+          //this.logger.error(`更新文件 ${file.fileName} 的 EXIF 数据时出错：${error.message}`);
+        }
+      }
+    }
+
+    this.logger.log(`EXIF 数据更新完成。总共处理了 ${processedCount} 个文件，更新了 ${updatedCount} 个文件的 EXIF 数据`);
+  }
+
   public async searchImages(query: string) {
     const scoreThreshold = 0.23; // 设置相似度阈值
     const results = await this.pgVectorStoreService.search(query, 21); // 限制结果为21张图片
@@ -757,5 +824,69 @@ export class FileService {
     return deg + min / 60 + sec / 3600;
   }
 
-  
+  public async getAllImagesWithGPS(): Promise<any[]> {
+    this.logger.log('\n\n### getAllImagesWithGPS');
+    const files = await this.fileRepository
+      .createQueryBuilder('file')
+      .where(`
+        file.exif->'gps'->'GPSLatitude' IS NOT NULL AND
+        file.exif->'gps'->'GPSLongitude' IS NOT NULL AND
+        jsonb_array_length(file.exif->'gps'->'GPSLatitude') = 3 AND
+        jsonb_array_length(file.exif->'gps'->'GPSLongitude') = 3 AND
+        (file.exif->'gps'->'GPSLatitude'->0)::text != 'null' AND
+        (file.exif->'gps'->'GPSLatitude'->1)::text != 'null' AND
+        (file.exif->'gps'->'GPSLatitude'->2)::text != 'null' AND
+        (file.exif->'gps'->'GPSLongitude'->0)::text != 'null' AND
+        (file.exif->'gps'->'GPSLongitude'->1)::text != 'null' AND
+        (file.exif->'gps'->'GPSLongitude'->2)::text != 'null' AND
+        (file.exif->'gps'->'GPSLatitude'->0)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLatitude'->1)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLatitude'->2)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLongitude'->0)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLongitude'->1)::text::float IS NOT NULL AND
+        (file.exif->'gps'->'GPSLongitude'->2)::text::float IS NOT NULL
+      `)
+      .select(['file.fId', 'file.fileName', 'file.path', 'file.exif'])
+      //.take(2000)
+      .getMany();
+
+    this.logger.log('\n### getAllImagesWithGPS 原始结果数量：' + files.length);
+    
+    const validFiles = files.filter(file => {
+      try {
+        const { GPSLatitude, GPSLongitude } = file.exif['gps'];
+        const lat = this.arrayToDD(GPSLatitude);
+        const lon = this.arrayToDD(GPSLongitude);
+        return this.isValidCoordinate(lat, lon);
+      } catch (error) {
+        this.logger.warn(`无效的GPS数据 fId: ${file.fId}, 文件名: ${file.fileName}`);
+        return false;
+      }
+    });
+   
+    const returnLimit = 5000;
+    this.logger.log('\n### getAllImagesWithGPS 有效结果数量：' + validFiles.length + ' 返回Map 限制数量：' + returnLimit);
+    return validFiles.reverse().slice(0, returnLimit).map(file => {
+      const { GPSLatitude, GPSLongitude } = file.exif['gps'];
+      return {
+        fId: file.fId,
+        fileName: file.fileName,
+        path: file.path,
+        coordinates: [
+          this.arrayToDD(GPSLatitude),       //######### 当地图显示不正常时， 请检查 Latitude 在 前面！！
+          this.arrayToDD(GPSLongitude),
+        ]
+      };
+    });
+  }
+
+  private isValidCoordinate(lat: number, lon: number): boolean {
+    return (
+      !isNaN(lat) && !isNaN(lon) &&
+      lat >= -90 && lat <= 90 &&
+      lon >= -180 && lon <= 180
+    );
+  }
+
+ 
 }

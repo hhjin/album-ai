@@ -262,11 +262,6 @@
     // 检查是否存在exif和gps信息, 决定是否 showNearbyButton 
     const image = images[currentImageIndex];
     showNearbyButton(fId, image.gps, gpsData)
-
-    // 显示地图按钮
-    const showMapButton = document.getElementById('showMapButton');
-    showMapButton.classList.remove('hidden');
-    showMapButton.onclick = showMap;
   }
 
   function getSurroundingImages(fId) {
@@ -387,6 +382,43 @@
     mapContainer.classList.remove('flex');
     mapContainer.classList.add('hidden');
   }
+
+  // 添加新的函数来处理显示所有GPS位置
+  async function showAllGPSLocations() {
+    const response = await fetch('/all-gps-images');
+    const allGPSImages = await response.json();
+
+    const mapContainer = document.getElementById('mapContainer');
+    mapContainer.classList.remove('hidden');
+    mapContainer.classList.add('flex');
+
+    const map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const bounds = L.latLngBounds();
+    allGPSImages.forEach(image => {
+      const [lat, lon] = image.coordinates;
+      if (!isNaN(lat) && !isNaN(lon)) {
+        L.marker([lat, lon]).addTo(map)
+          .bindPopup(`<img src="/api/v1/file/${image.fId}/download" alt="${image.fileName}" style="max-width:100px; max-height:100px;"><br>${image.fileName}`);
+        bounds.extend([lat, lon]);
+      }
+    });
+
+    if (bounds.isValid()) {
+      map.fitBounds(bounds);
+    } else {
+      map.setView([0, 0], 2);
+    }
+  }
+
+  // 为新按钮添加点击事件监听器
+  document.addEventListener('DOMContentLoaded', () => {
+    const showAllGPSButton = document.getElementById('showAllGPSButton');
+    showAllGPSButton.addEventListener('click', showAllGPSLocations);
+  });
 </script>
 
   <!-- 在模态框中添加左右箭头 ，关闭， 周围图片 的按钮 -->
@@ -411,6 +443,13 @@
     <button onclick="closeMap()" class="absolute top-4 right-4 text-white text-2xl bg-black bg-opacity-50 rounded-full w-18 h-18 flex items-center justify-center">✖</button>  
   </div>
    <button onclick="closeMap()" class="absolute top-4 right-4 text-white text-2xl bg-black rounded-full w-8 h-8 flex items-center justify-center">✖</button>
+</div>
+
+<!-- 在页面底部添加新按钮 -->
+<div class="fixed bottom-4 right-4">
+  <button id="showAllGPSButton" class="bg-primary text-white px-4 py-2 rounded-full shadow-lg hover:bg-primary-dark">
+    显示所有GPS位置
+  </button>
 </div>
 
   </body>

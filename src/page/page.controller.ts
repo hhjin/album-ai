@@ -63,4 +63,9 @@ export class PageController {
       query: query || null,
     };
   }
+
+  @Get('/all-gps-images')
+  async getAllGPSImages() {
+    return await this.fileService.getAllImagesWithGPS();
+  }
 }

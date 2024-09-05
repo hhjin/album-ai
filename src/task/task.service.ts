@@ -30,19 +30,19 @@ export class TaskService {
    * 四颗*时，最多设置60分钟，如果超过1小时，需要用 3颗*来实现
    * 
    */
-  @Cron('*/2 * * * *') //  2 分钟执行一次 , Azure gpt-4o约9秒识别一个图像
+  //@Cron('*/2 * * * *') //  2 分钟执行一次 , Azure gpt-4o约9秒识别一个图像
   async triggerExtractDesc() {
     this.logger.log('Starting extract desc');
     await this.fileService.extractDesc();
   }
 
-  @Cron('*/2 * * * *') // 每2分钟执行一次，可以等ExtractDesc积累一批数据后，再进行批量 Embeddings 
+  //@Cron('*/2 * * * *') // 每2分钟执行一次，可以等ExtractDesc积累一批数据后，再进行批量 Embeddings 
   async triggerEmbedding() {
     this.logger.log('Starting embedding');
     await this.fileService.embedding();
   }
 
-  //@Cron('*/20 * * * * *') // 每20秒执行一次heartBeating， 
+  @Cron('*/20 * * * * *') // 每20秒执行一次heartBeating， 
   async heartBeating() {
      // heartBeating 主要用于快速开始第一次执行，不管各任务的定时如何设置
     this.logger.log('Heart Beating ...');

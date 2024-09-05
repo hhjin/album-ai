@@ -1,6 +1,7 @@
 services:
+  # 使用GPS位置查询功能 image: ivanlonel/postgis-with-extensions
   postgres:
-    image: ivanlonel/postgis-with-extensions
+    image: ${POSTGRES_IMAGE:-pgvector/pgvector:pg16}
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: 123456

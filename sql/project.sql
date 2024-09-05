@@ -20,7 +20,7 @@ CREATE TABLE file_album
 create unique index uk_crc on file_album (crc);
 
 CREATE EXTENSION vector;
-
+CREATE EXTENSION postgis;
 create table file_vector_index
 (
     id        bigserial primary key,

@@ -28,12 +28,13 @@ public async search(@Query('searchQuery') searchQuery: string) {
       if (!file.path.startsWith(process.env.ALBUM_PATH)) {
         this.logger.log(`fId ${fId} path ${file.path} not match env.ALBUM_PATH,  replaced to ${process.env.ALBUM_PATH}`);
         file.path = file.path.replace(regex, process.env.ALBUM_PATH);
+        file.path = file.path.replaceAll('\\', '/');
+        
       }
     }else
       this.logger.log(` download fId ${fId} path ${file.path} `);
 
-    // if (file.path.indexOf('DSC_0840') <0 )
-    //   return
+     
     response.download(file.path, (err) => {
       if (!err) {
         return;
