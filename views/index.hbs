@@ -421,18 +421,20 @@
   });
 </script>
 
-  <!-- 在模态框中添加左右箭头 ，关闭， 周围图片 的按钮 -->
-  <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-  <div class="max-w-4xl w-full p-4 relative">
-    <img id="modalImage" src="" alt="" class="w-full h-auto max-h-[80vh] object-contain rounded-lg">
+<!-- 在模态框中添加左右箭头 ，关闭， 周围图片 的按钮 -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="max-w-7xl w-full p-4 relative">
+    <img id="modalImage" src="" alt="" class="w-full h-auto max-h-[100vh] object-contain rounded-lg">
     <p id="modalCaption" class="text-white text-center mt-2"></p>
     <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-2xl bg-black rounded-full w-8 h-8 flex items-center justify-center">✖</button>
     <button onclick="changeImage(-1)" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&lt;</button>
     <button onclick="changeImage(1)" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-4xl">&gt;</button>
-    <button id="getSurroundingButton" class="absolute bottom-4 left-4 text-white text-2xl">&#8634;</button>
-    <!-- 修改getNearbyButton的图标 -->
-    <button id="getNearbyButton" class="absolute bottom-4 right-4 text-white text-2xl hidden">&#127747;</button>
-    <button id="showMapButton" class="absolute bottom-4 right-20 text-white text-2xl hidden"> &#127758;</button>
+    <!-- 将按钮移到图片右边外部 -->
+    <div class="absolute top-4 -right-16 flex flex-col space-y-4">
+      <button id="getSurroundingButton" class="text-white text-2xl bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-75">&#8634;</button>
+      <button id="getNearbyButton" class="text-white text-2xl bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-75 hidden">&#127747;</button>
+      <button id="showMapButton" class="text-white text-2xl bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-75 hidden">&#127758;</button>
+    </div>
   </div>
 </div>
 

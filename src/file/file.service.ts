@@ -356,6 +356,17 @@ export class FileService {
           let content , exifData , photoTime
           let is_extract_aidesc = false;
           try {
+                //某些情况下，相册根目录会变动（如App从Mac迁移到Windows), postgres数据表里path存放是生成数据时的路径ALBUM_PATH_OLD。 需要 重替换为当前ALBUM_PATH路径。
+              if (process.env.ALBUM_PATH_OLD != null) {
+                const regex = new RegExp(`^${process.env.ALBUM_PATH_OLD}`);
+                if (!fileAlbum.path.startsWith(process.env.ALBUM_PATH)) {
+                  this.logger.log(`fId ${fileAlbum.fId} path ${fileAlbum.path} not match env.ALBUM_PATH,  replaced to ${process.env.ALBUM_PATH}`);
+                  fileAlbum.path = fileAlbum.path.replace(regex, process.env.ALBUM_PATH);
+                  fileAlbum.path = fileAlbum.path.replaceAll('\\', '/');
+                  
+                }
+              }
+                
             const imageBuf = await this.extractImageService.compressImageToBuffer(
               fileAlbum.path,
               80,
