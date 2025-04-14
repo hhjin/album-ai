@@ -29,7 +29,9 @@ export class FileService {
   private hasUpdateStatusFromIgnore2InitTask = false;
   private hasUpdateExifDataForEmbeddedFilesTask = false;
 
-
+  // heartBeating 主要用于快速开始第一次执行，不管各任务的定时如何设置
+  // 由  heartBeating 触发执行的任务，只会执行一次 
+  // 后续的  heartBeating 没有任何实际作用，（只是显示现在程序还在运行中）
   public async heartBeating (initFileScan:boolean=true) {
     if (this.hasHeartBeatingTask )
       return
@@ -756,7 +758,7 @@ export class FileService {
       this.logger.log('\n### 没有 GPS 信息。');
       return [];
     }
-
+    this.logger.log('\n### getNearbyImages for currentImage: '+ currentImage.path);
     const nearbyImages = await this.fileRepository
       .createQueryBuilder('file')
       .where(`

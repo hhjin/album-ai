@@ -3,7 +3,7 @@ import { anthropicClient, openai, openai_azure_image_extract } from '../app.modu
 import * as sharp from 'sharp';
 import Anthropic from '@anthropic-ai/sdk';
 import TextBlock = Anthropic.TextBlock;
-
+import { classifyImage } from './ollama_Image';
 @Injectable()
 export class ExtractImageService {
   public async extractImageInfo(
@@ -82,6 +82,13 @@ export class ExtractImageService {
         ],
       });
       return res.choices[0].message.content;
+    }  else if (process.env.IMAGE_EXTRACT_PROVIDER == 'ollama') {
+      const url = process.env.IMAGE_EXTRACT_PROVIDER_URL
+      const model =process.env.IMAGE_EXTRACT_PROVIDER_MODEL
+      //const prompt =process.env.IMAGE_EXTRACT_PROVIDER_PROMPT
+      const res = await classifyImage(url, model, 'tell me what do you see in this picture?', imageBase64)
+      return res
+
     }else {
       throw new Error(
         `no support. provider=${process.env.IMAGE_EXTRACT_PROVIDER}`,

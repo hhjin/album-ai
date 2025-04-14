@@ -30,24 +30,24 @@ export class TaskService {
    * 四颗*时，最多设置60分钟，如果超过1小时，需要用 3颗*来实现
    * 
    */
-  @Cron('*/2 * * * *') //  2 分钟执行一次 , Azure gpt-4o约9秒识别一个图像
-  async triggerExtractDesc() {
-    this.logger.log('Starting extract desc');
-    await this.fileService.extractDesc();
-  }
+  // @Cron('*/2 * * * *') //  2 分钟执行一次 , Azure gpt-4o约9秒识别一个图像
+  // async triggerExtractDesc() {
+  //   this.logger.log('Starting extract desc');
+  //   await this.fileService.extractDesc();
+  // }
 
-  @Cron('*/2 * * * *') // 每2分钟执行一次，可以等ExtractDesc积累一批数据后，再进行批量 Embeddings 
-  async triggerEmbedding() {
-    this.logger.log('Starting embedding');
-    await this.fileService.embedding();
-  }
+  // @Cron('*/2 * * * *') // 每2分钟执行一次，可以等ExtractDesc积累一批数据后，再进行批量 Embeddings 
+  // async triggerEmbedding() {
+  //   this.logger.log('Starting embedding');
+  //   await this.fileService.embedding();
+  // }
 
   @Cron('*/30 * * * * *') // 每30秒执行一次heartBeating， 
   async heartBeating() {
      // heartBeating 主要用于快速开始第一次执行，不管各任务的定时如何设置
     this.logger.log('Heart Beating ...');
     //await this.fileService.heartBeating (initFileScan=false);  不能像在 Python 中那样直接在方法调用时指定参数名
-    await this.fileService.heartBeating(false);
+    await this.fileService.heartBeating(true);
   }
 
 
